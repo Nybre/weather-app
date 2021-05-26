@@ -1,0 +1,105 @@
+Dashboard_file_UI <- function(id) {
+  ns <- NS(id)
+  tagList( 
+    fluidRow(
+      value_box("Title",htmlOutput(ns("value_5")),color = "orange", 
+                width = 16, size = "tiny")
+    ), 
+    column(width = 12,
+          
+           box(title="Jogging/No Jogging Indicator", color = "green", width = 12,    
+               rHandsontableOutput(ns("Jogging_Table")) 
+           ) 
+    ),
+
+    column(width = 4,
+           box(title = "Control Panel", color = "purple", width =4,
+               collapsible = T,  
+               
+               tags$div(tags$div(HTML("<b>Date from :</b> ")),
+                        date_input(ns("date_from"), value =  Sys.Date(), 
+                                   style = "width: 70%;")),
+               br(),
+               tags$div(tags$div(HTML("<b>Date to :</b> ")),
+                        date_input(ns("date_to"), value = Sys.Date()+2, 
+                                   style = "width: 70%;")) 
+           )
+    ),
+    column(width = 16,
+           box(title="Map", color = "green", width = 16,    
+               leafletOutput(ns("my_map"))
+           ) 
+    )
+    
+  )
+}
+
+Dashboard_file <- function(input, output, session, pool) { 
+  #date selector
+  starting_date<-reactive({input$date_from}) 
+  ending_date<-reactive({input$date_to})
+  
+    output$Jogging_Table <- renderRHandsontable({ 
+      # get forecast
+      forecast = get_forecast("Netherlands", units = "metric") %>%
+        owmr_as_tibble()
+      
+      Weather.data = data.frame(forecast)
+      #subset data by Date, temp and weather description
+      Weather.data = Weather.data[ , c(1, 2, 9)]
+      #rename columns
+      colnames(Weather.data) <- c( "Date (3hr interval)","Temperature","Weather Description")  
+      
+      rhandsontable(Weather.data[Weather.data$`Date (3hr interval)`>=starting_date()[1] &Weather.data$`Date (3hr interval)`<=ending_date()[1],],
+                    readOnly = TRUE,search = TRUE)%>%
+        hot_cols(columnSorting = TRUE,highlightCol = TRUE, highlightRow = TRUE,
+                 manualColumnResize = T)%>%
+        hot_cols(fixedColumnsLeft = 1) %>% 
+        hot_cols(renderer = " 
+      function (instance, td, row, col, prop, value, cellProperties) {
+        Handsontable.renderers.TextRenderer.apply(this, arguments); 
+        if((value < 10 && col==1)) {td.style.background = 'pink';} 
+        if((value > 15 && col==1)) {td.style.background = 'lightgreen';} 
+        }")%>% 
+        hot_context_menu(
+          customOpts = list(
+            search = list(name = "Search",
+                          callback = htmlwidgets::JS(
+                            "function (key, options) {
+              var srch = prompt('Search criteria');
+              this.search.query(srch);
+              this.render();
+              }"))))%>%hot_table(highlightCol = TRUE, highlightRow = TRUE)%>% 
+        hot_context_menu(
+          customOpts = list(
+            csv = list(name = "Download to CSV",
+                       callback = htmlwidgets::JS(
+                         "function (key, options) {
+             var csv = csvString(this, sep=',', dec='.');
+             var link = document.createElement('a');
+             link.setAttribute('href', 'data:text/plain;charset=utf-8,' +
+             encodeURIComponent(csv));
+             link.setAttribute('download', 'data.csv');
+             document.body.appendChild(link);
+             link.click();
+             document.body.removeChild(link);}")))) %>%
+        hot_cell(1, 3, "") 
+    })
+    
+    output$my_map <- renderLeaflet({
+      leaflet() %>%
+        addTiles() %>%
+        addMarkers(lng=4.9041, lat=52.3676, popup="Amsterdam")
+    })
+    
+ 
+    output$value_5 <- renderText({
+     
+      font<-'blue'
+      formatedFont_1 <- sprintf('<font color="%s">%s</font>',
+                                font,"Netherlands Weather App") 
+      return(formatedFont_1)
+      
+    })
+    
+} 
