@@ -1,32 +1,33 @@
+#UI component
 Dashboard_file_UI <- function(id) {
   ns <- NS(id)
   tagList( 
     fluidRow(
-      value_box("Title",htmlOutput(ns("value_5")),color = "orange", 
+      #heading box
+      value_box("Titel",htmlOutput(ns("value_5")),color = "orange", 
                 width = 16, size = "tiny")
     ), 
     column(width = 12,
-          
-           box(title="Jogging/No Jogging Indicator", color = "green", width = 12,    
+          #training indicator component
+           box(title="sporten/niet sporten indicator", color = "green", width = 12,    
                rHandsontableOutput(ns("Jogging_Table")) 
            ) 
-    ),
-
+    ), 
     column(width = 4,
-           box(title = "Control Panel", color = "purple", width =4,
+           box(title = "Controlepaneel", color = "purple", width =4,
                collapsible = T,  
-               
-               tags$div(tags$div(HTML("<b>Date from :</b> ")),
+               #date range selector
+               tags$div(tags$div(HTML("<b>Datum vanaf :</b> ")),
                         date_input(ns("date_from"), value =  Sys.Date(), 
                                    style = "width: 70%;")),
                br(),
-               tags$div(tags$div(HTML("<b>Date to :</b> ")),
+               tags$div(tags$div(HTML("<b>Datum tot :</b> ")),
                         date_input(ns("date_to"), value = Sys.Date()+2, 
                                    style = "width: 70%;")) 
            )
     ),
     column(width = 16,
-           box(title="Map", color = "green", width = 16,    
+           box(title="Kaart", color = "green", width = 16,    
                leafletOutput(ns("my_map"))
            ) 
     )
@@ -34,6 +35,7 @@ Dashboard_file_UI <- function(id) {
   )
 }
 
+#Server compoent
 Dashboard_file <- function(input, output, session, pool) { 
   #date selector
   starting_date<-reactive({input$date_from}) 
@@ -48,9 +50,10 @@ Dashboard_file <- function(input, output, session, pool) {
       #subset data by Date, temp and weather description
       Weather.data = Weather.data[ , c(1, 2, 9)]
       #rename columns
-      colnames(Weather.data) <- c( "Date (3hr interval)","Temperature","Weather Description")  
+      colnames(Weather.data) <- c( "Datum (3hr interval)","Temperatuur","Weersomstandigheden")  
       
-      rhandsontable(Weather.data[Weather.data$`Date (3hr interval)`>=starting_date()[1] &Weather.data$`Date (3hr interval)`<=ending_date()[1],],
+      rhandsontable(Weather.data[Weather.data$`Datum (3hr interval)`>=starting_date()[1] &Weather.data$`Datum (3hr interval)`<=ending_date()[1],]
+                    ,
                     readOnly = TRUE,search = TRUE)%>%
         hot_cols(columnSorting = TRUE,highlightCol = TRUE, highlightRow = TRUE,
                  manualColumnResize = T)%>%
@@ -92,14 +95,12 @@ Dashboard_file <- function(input, output, session, pool) {
         addMarkers(lng=4.9041, lat=52.3676, popup="Amsterdam")
     })
     
- 
-    output$value_5 <- renderText({
-     
+ #Application heading
+    output$value_5 <- renderText({ 
       font<-'blue'
       formatedFont_1 <- sprintf('<font color="%s">%s</font>',
-                                font,"Netherlands Weather App") 
-      return(formatedFont_1)
-      
+                                font,"Nederland Weer App") 
+      return(formatedFont_1) 
     })
     
 } 
