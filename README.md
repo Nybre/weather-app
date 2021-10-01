@@ -1,2 +1,2 @@
 # weather-app
-App tells if you must go jogging or not
+App tells best times to job based on weather forecast API
